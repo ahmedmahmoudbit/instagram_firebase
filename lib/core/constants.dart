@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:instagram_firebase/core/network/local/cache_helper.dart';
 
 const String serverFailureMessage = 'Server Failure';
 const String cacheFailureMessage = 'Cache Failure';
@@ -72,16 +73,8 @@ return [
 dynamic parseMapFromServer(String text) => jsonDecode(
     text.replaceAll(r'\', r'').replaceAll(r'\\', r'').replaceAll(r'\\\', r''));
 
-// List<Widget> bottomPages = [
-//   const HomePage(),
-//   const Categories(),
-//   const SavedPage(),
-//   AccountPage(),
-// ];
-
 bool? isDarkMode;
 bool isDark = false;
-int indexPage = 0;
 String? uIdUser;
 
 void showSnackBar(String errorMessage,BuildContext context) {
@@ -276,3 +269,15 @@ const space90Horizontal = SizedBox(
 const space100Horizontal = SizedBox(
   width: 100.0,
 );
+
+void signOut(context) {
+  CacheHelper.removeData(key: 'uId').then((value) {
+    if (value) {
+      showToast(
+          message: 'Sign out Successfully', toastStates: ToastStates.SUCCESS);
+      // navigateFinish(context, LoginScreen());
+    }
+  });
+  CacheHelper.removeData(key: 'image');
+  CacheHelper.removeData(key: 'username');
+}

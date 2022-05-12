@@ -81,12 +81,20 @@ class RegisterBloc extends Cubit<RegisterBlocState> {
         .doc(uId)
         .set(userModel.toMap())
         .then((value) {
-      CacheHelper.saveData(
-          key: 'uId', value: uId);
+      saveData(userModel);
       emit(CreateUserSuccessState());
     }).catchError((error) {
       emit(Error(error.toString()));
     });
+  }
+
+  void saveData(UserModel userModel) {
+    CacheHelper.saveData(
+        key: 'username', value: userModel.name);
+    CacheHelper.saveData(
+        key: 'image', value: userModel.imageUrl);
+    CacheHelper.saveData(
+        key: 'uId', value: userModel.uId);
   }
 
 }

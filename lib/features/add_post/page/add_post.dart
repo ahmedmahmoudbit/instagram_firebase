@@ -52,14 +52,7 @@ class _AddPostPageState extends State<AddPostPage> {
               builder:(_)=> Container(
                 width: 45.0,
                 height: 45.0,
-                decoration: BoxDecoration(
-                  color: HexColor(greyWhite),
-                  borderRadius: BorderRadius.circular(
-                    10.0,
-                  ),
-                ),
-                clipBehavior: Clip.antiAliasWithSaveLayer,
-                child: const CupertinoActivityIndicator(),
+                child: const CupertinoActivityIndicator(color: Colors.grey,),
               ),
               fallback: (_)=> InkWell(
                 borderRadius: BorderRadius.circular(50),

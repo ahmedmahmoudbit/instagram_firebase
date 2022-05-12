@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_font_icons/flutter_font_icons.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:instagram_firebase/core/constants.dart';
 import 'package:instagram_firebase/core/models/posts.dart';
 import 'package:instagram_firebase/core/widget/loading.dart';
+import 'package:instagram_firebase/features/add_post/cubit/add_post_cubit.dart';
 import 'package:instagram_firebase/features/add_post/page/add_post.dart';
 import 'package:instagram_firebase/features/comment/page/comments.dart';
 import 'package:instagram_firebase/features/home/cubit/home_bloc_cubit.dart';
+import 'package:instagram_firebase/features/login/page/login.dart';
 import 'package:instagram_firebase/features/stories/page/stories.dart';
 
 class HomePage extends StatelessWidget {
@@ -21,56 +24,70 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     this.context = context;
     cubit = context.read<HomeBlocCubit>();
+    // get posts
+    cubit.getPosts();
     var size = MediaQuery.of(context).size;
-  return BlocListener<HomeBlocCubit, HomeBlocState>(
-  listener: (context, state) {
-    _state = state;
-  },
-  child: Scaffold(
-      backgroundColor: Colors.black,
-      appBar: screenAppBar(),
-      body: screenBody(size),
-    ),
-);
+    return BlocListener<HomeBlocCubit, HomeBlocState>(
+      listener: (context, state) {
+        _state = state;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: screenAppBar(),
+        body: screenBody(size),
+      ),
+    );
   }
 
   AppBar screenAppBar() => AppBar(
-    backgroundColor: Colors.black,
-    title: const Text(
-      "Instagram",
-      style: TextStyle(color: Colors.white),
-    ),
-    actions: [
-      IconButton(
-          onPressed: () {
-            onAddBoxTapped(context);
-          },
-          icon: const Icon(Icons.add_box_outlined)),
-      IconButton(onPressed: () {}, icon: const Icon(Icons.favorite_border)),
-      IconButton(onPressed: () {}, icon: const Icon(Icons.chat_outlined)),
-    ],
-  );
-
-  Widget screenBody(Size size) => BuildCondition(
-    condition: _state is HomeSuccessPostStates,
-    builder: (_)=> ListView(
-      children: [
-        buildStories(),
-        const Divider(
-          color: Colors.white,
-          height: 0.1,
-          thickness: 0.4,
+        backgroundColor: Colors.black,
+        title: const Text(
+          "Instagram",
+          style: TextStyle(color: Colors.white),
         ),
-        ListView.separated(
-            shrinkWrap: true,
-            physics: const ScrollPhysics(),
-            itemBuilder: (context, index) => buildPostItem(size,cubit.posts[index]),
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
-            itemCount: cubit.posts.length)
-      ],
-    ),
-    fallback: (_)=> const LoadingPage(),
-  );
+        actions: [
+          IconButton(
+              onPressed: () {
+                onAddBoxTapped(context);
+              },
+              icon: const Icon(Icons.add_box_outlined)),
+          IconButton(onPressed: () {}, icon: const Icon(Icons.favorite_border)),
+          IconButton(onPressed: () {}, icon: const Icon(Icons.chat_outlined)),
+        ],
+      );
+
+  Widget screenBody(Size size) =>
+      BlocBuilder<HomeBlocCubit, HomeBlocState>(buildWhen: (previous, current) {
+        return current is HomeSuccessPostStates;
+      }, builder: (context, state) {
+        return BuildCondition(
+          condition: _state is HomeSuccessPostStates,
+          builder: (_) => BlocBuilder<HomeBlocCubit, HomeBlocState>(
+            buildWhen: (previous, current) => current is HomeSuccessPostStates,
+            builder: (context, state) {
+              return ListView(
+                children: [
+                  buildStories(),
+                  const Divider(
+                    color: Colors.white,
+                    height: 0.1,
+                    thickness: 0.4,
+                  ),
+                  ListView.separated(
+                      shrinkWrap: true,
+                      physics: const ScrollPhysics(),
+                      itemBuilder: (context, index) =>
+                          buildPostItem(size, cubit.posts[index]),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 8),
+                      itemCount: cubit.posts.length)
+                ],
+              );
+            },
+          ),
+          fallback: (_) => const LoadingPage(),
+        );
+      });
 
   buildStories() {
     return Padding(
@@ -199,8 +216,7 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                     CircleAvatar(
-                      backgroundImage: NetworkImage(
-                          post.userImageUrl),
+                      backgroundImage: NetworkImage(post.userImageUrl),
                       radius: 23,
                     ),
                   ],
@@ -245,52 +261,77 @@ class HomePage extends StatelessWidget {
             height: size.height * 0.4,
             width: double.infinity,
             fit: BoxFit.cover,
-            image: NetworkImage(
-                post.postImageUrl)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Row(
-            children: [
-              IconButton(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.favorite_border,
-                    color: Colors.white,
-                  )),
-              IconButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CommentsPage(),
-                        ));
-                  },
-                  icon: const Icon(
-                    Icons.mode_comment_outlined,
-                    color: Colors.white,
-                  )),
-              IconButton(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.send_outlined,
-                    color: Colors.white,
-                  )),
-              const Spacer(),
-              IconButton(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.bookmark_border,
-                    color: Colors.white,
-                  )),
-            ],
-          ),
+            image: NetworkImage(post.postImageUrl)),
+        BlocBuilder<HomeBlocCubit, HomeBlocState>(
+          buildWhen: (previous, current) =>
+              current is LikePostSuccessState ||
+              current is UnLikePostSuccessState,
+          builder: (context, state) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                children: [
+                  IconButton(
+                      onPressed: () {
+                        if (post.isLiked) {
+                          post.likeCount--;
+                          post.isLiked = false;
+                          cubit.unLikePost(post.postId);
+                        } else {
+                          post.likeCount++;
+                          post.isLiked = true;
+                          cubit.likePost(post.postId);
+                        }
+                      },
+                      icon: Icon(
+                        post.isLiked ? Icons.favorite : Icons.favorite_border,
+                        color: Colors.white,
+                      )),
+                  IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  CommentsPage(postId: post.postId),
+                            ));
+                      },
+                      icon: const Icon(
+                        Icons.mode_comment_outlined,
+                        color: Colors.white,
+                      )),
+                  IconButton(
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.send_outlined,
+                        color: Colors.white,
+                      )),
+                  const Spacer(),
+                  IconButton(
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.bookmark_border,
+                        color: Colors.white,
+                      )),
+                ],
+              ),
+            );
+          },
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 23.0),
-          child: Text(
-            "17304 Likes",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
+        BlocBuilder<HomeBlocCubit, HomeBlocState>(
+          buildWhen: (previous, current) =>
+              current is LikePostSuccessState ||
+              current is UnLikePostSuccessState,
+          builder: (context, state) {
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: 23.0),
+              child: Text(
+                "${post.likeCount} Likes",
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            );
+          },
         ),
         const SizedBox(
           height: 4,
@@ -299,12 +340,11 @@ class HomePage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 23.0),
             child: RichText(
                 text: TextSpan(children: [
-                  TextSpan(
-                      text: post.username,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  TextSpan(
-                      text: post.postContent)
-                ]))),
+              TextSpan(
+                  text: post.username,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              TextSpan(text: post.postContent)
+            ]))),
       ],
     );
   }
@@ -393,6 +433,22 @@ class HomePage extends StatelessWidget {
             ),
           ),
         ),
+        PopupMenuItem<String>(
+          value: '5',
+          child: Expanded(
+            child: Row(
+              children: [
+                Text(
+                  'logout',
+                  style: Theme.of(context).textTheme.bodyText1,
+                ),
+                const Spacer(),
+                Icon(Fontisto.direction_sign,
+                    color: Theme.of(context).focusColor),
+              ],
+            ),
+          ),
+        ),
       ],
       elevation: 8.0,
     ).then<void>((String? itemSelected) {
@@ -402,8 +458,9 @@ class HomePage extends StatelessWidget {
         pickImage();
       } else if (itemSelected == "2") {
         //code here
-      } else {
-        //code here
+      } else if (itemSelected == "5") {
+        signOut(context);
+        navigateAndFinish(context, const LoginPage());
       }
     });
   }

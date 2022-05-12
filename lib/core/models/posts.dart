@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:instagram_firebase/core/network/local/cache_helper.dart';
 
 class Post {
   late String postId;
@@ -10,6 +11,9 @@ class Post {
   final double latitude;
   final double longitude;
   final String locationName;
+  int? type;
+  bool isLiked = false;
+  int likeCount = 0;
 
   Post({
     required this.postContent,
@@ -21,12 +25,19 @@ class Post {
     this.locationName = "Meeru island resort & spa",
     this.latitude = 0.0,
     this.longitude = 0.0,
+    this.type = 1,
   }) {
-    postId = FirebaseAuth.instance.currentUser!.uid + DateTime.now().toString();
-    userId = FirebaseAuth.instance.currentUser!.uid;
-    username = "GeeCoders";
-    userImageUrl =
-    "https://firebasestorage.googleapis.com/v0/b/seniorstepsfirebase.appspot.com/o/profileImages%2FYItDENmtKFPxFDnoDjU6U4ZZrQN2?alt=media&token=8a07664c-4fc1-48d5-899d-1adae9bf4cac";
+
+    // if type is 0 (share post) else comment don't get postId
+    if (type == 0) {
+      var usrId= FirebaseAuth.instance.currentUser!.uid;
+      postId = DateTime.now().toString().replaceAll(" ", "") + usrId;
+      userId = usrId;
+      username = CacheHelper.getData(key: 'username');
+      userImageUrl = CacheHelper.getData(key: 'image');
+    }
+
+
   }
 
   Post.fromJson(Map<String, dynamic> json)

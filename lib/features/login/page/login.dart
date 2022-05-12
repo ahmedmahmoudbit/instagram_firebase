@@ -22,6 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController passwordController = TextEditingController();
   bool isDisabled = true;
   LoginBloc cubit = LoginBloc();
+  int? _state;
 
   @override
   void initState() {
@@ -32,10 +33,15 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return BlocListener<LoginBloc, LoginBlocState>(
       listener: (context, state) {
+        print('8888888888888 ${_state.toString()}');
       if (state is HomeGetUserSuccessState) {
+        _state = 1;
         navigateAndFinish(context, HomePage());
       } else if (state is Error) {
+        _state = 2;
         showSnackBar(state.error.toString(), context);
+      } else if (state is LoginLoadingState) {
+        _state = 3;
       }
       },
       child: Scaffold(
@@ -80,6 +86,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text('Please enter your email and password',
                           style: TextStyle(color: Colors.red[100]),),
                       )),
+
                 TextButton(
                     onPressed: () {
                       navigateAndFinish(context, const RegisterPage());

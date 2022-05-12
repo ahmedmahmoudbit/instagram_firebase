@@ -6,6 +6,7 @@ import 'package:instagram_firebase/core/cubit/MyBlocObserver.dart';
 import 'package:instagram_firebase/core/network/local/cache_helper.dart';
 import 'package:instagram_firebase/core/network/remote/dio_helper.dart';
 import 'package:instagram_firebase/features/add_post/cubit/add_post_cubit.dart';
+import 'package:instagram_firebase/features/comment/cubit/comment_cubit.dart';
 import 'package:instagram_firebase/features/home/cubit/home_bloc_cubit.dart';
 import 'package:instagram_firebase/features/home/page/homePage.dart';
 import 'package:instagram_firebase/features/login/cubit/login_bloc_cubit.dart';
@@ -19,7 +20,10 @@ void main() async{
   await CacheHelper.init();
 
   Widget widget;
-  uIdUser = CacheHelper.getData(key: 'uId') ?? '';
+  uIdUser = CacheHelper.getData(key: 'uId');
+  // print(CacheHelper.getData(key: 'uId'));
+  // print(CacheHelper.getData(key: 'username'));
+  // print(CacheHelper.getData(key: 'image'));
 
   if (uIdUser != null) {
     widget = HomePage();
@@ -42,7 +46,8 @@ class MyApp extends StatelessWidget {
        BlocProvider(create: (context) => LoginBloc(),),
        BlocProvider(create: (context) => RegisterBloc(),),
        BlocProvider(create: (context) => AddPostCubit(),),
-       BlocProvider(create: (context) => HomeBlocCubit()..getPosts(),),
+       BlocProvider(create: (context) => HomeBlocCubit(),),
+       BlocProvider(create: (context) => CommentCubit(),),
       ],
       child: MaterialApp(
         useInheritedMediaQuery: true,

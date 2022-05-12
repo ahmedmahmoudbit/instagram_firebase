@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:instagram_firebase/core/constants.dart';
+import 'package:instagram_firebase/features/home/page/homePage.dart';
 import 'package:instagram_firebase/features/login/page/login.dart';
 import 'package:instagram_firebase/features/register/cubit/register_bloc_cubit.dart';
 import 'package:instagram_firebase/features/register/widgets/button_login.dart';
@@ -39,7 +40,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return BlocListener<RegisterBloc, RegisterBlocState>(
       listener: (context, state) {
         if (state is CreateUserSuccessState) {
-          navigateAndFinish(context, LoginPage());
+          navigateAndFinish(context, HomePage());
         } else if (state is Error) {
           showSnackBar(state.error,context);
         } else if (state is RegisterLoadingState) {

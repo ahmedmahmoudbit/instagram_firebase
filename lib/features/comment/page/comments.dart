@@ -1,17 +1,48 @@
 import 'dart:io';
+import 'package:buildcondition/buildcondition.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:instagram_firebase/core/constants.dart';
+import 'package:instagram_firebase/core/network/local/cache_helper.dart';
+import 'package:instagram_firebase/core/widget/loading.dart';
+import 'package:instagram_firebase/features/comment/cubit/comment_cubit.dart';
 
-class CommentsPage extends StatelessWidget {
-  const CommentsPage({Key? key}) : super(key: key);
+class CommentsPage extends StatefulWidget {
+  final String postId;
+  const CommentsPage({Key? key,required this.postId}) : super(key: key);
+
+  @override
+  State<CommentsPage> createState() => _CommentsPageState();
+}
+
+class _CommentsPageState extends State<CommentsPage> {
+  late CommentCubit commentsCubit;
+  final TextEditingController controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    commentsCubit = context.read<CommentCubit>();
+    // remove old comment before open any comment post
+    commentsCubit.comments.clear();
+    // get Comments after open any post Comment.
+    commentsCubit.getComments(postId: widget.postId);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<CommentCubit, CommentState>(
+    listener: (context, state) {
+      if (state is CommentAddSuccessState) {
+        commentsCubit.getComments(postId: widget.postId);
+      }
+  },
+  child: Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        title: Text(
+        title: const Text(
           "Comments",
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
@@ -20,69 +51,34 @@ class CommentsPage extends StatelessWidget {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              itemCount: 66,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.all(15),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        backgroundImage: const NetworkImage(
-                            "https://wirepicker.com/wp-content/uploads/2021/09/android-vs-ios_1200x675.jpg"),
-                        radius: 18,
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              RichText(
-                                  text: const TextSpan(children: [
-                                    TextSpan(
-                                        text: 'AmirMohammed',
-                                        style: TextStyle(fontWeight: FontWeight.bold)),
-                                    TextSpan(
-                                        text:
-                                        '  some location area name..some location area name..  some location area name..some location area name..')
-                                  ])),
-                              Text(
-                                "2h",
-                                style:
-                                TextStyle(fontSize: 15, color: Colors.grey),
-                              ),
-                            ],
-                            mainAxisAlignment: MainAxisAlignment.center,
-                          ))
-                    ],
-                  ),
-                );
-              },
-            ),
+            child: buildListView(),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                CircleAvatar(
-                  backgroundImage: const NetworkImage(
-                      "https://wirepicker.com/wp-content/uploads/2021/09/android-vs-ios_1200x675.jpg"),
+                 CircleAvatar(
+                  backgroundImage: NetworkImage(
+                      CacheHelper.getData(key: 'image')),
                   radius: 22,
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 10,
                 ),
                 Expanded(
                     child: TextFormField(
+                      // controller
+                      controller: controller,
+                      onFieldSubmitted: (value){
+                        commentsCubit.addComment(postId: widget.postId, commentContent: value);
+                        // remove text after send
+                        controller.clear();
+                      },
                       textInputAction: TextInputAction.send,
                       style: const TextStyle(color: Colors.grey),
                       decoration: InputDecoration(
                         hintText: "Add a comment",
-                        hintStyle: TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.bold),
+                        hintStyle: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.bold),
                         fillColor: Colors.white,
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(25.0),
@@ -92,7 +88,7 @@ class CommentsPage extends StatelessWidget {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(25.0),
-                          borderSide: BorderSide(
+                          borderSide: const BorderSide(
                             color: Colors.grey,
                             width: 2.0,
                           ),
@@ -104,16 +100,82 @@ class CommentsPage extends StatelessWidget {
           ), ace()
         ],
       ),
-    );
+    ),
+);
   }
+
   ace() {
     if (Platform.isIOS) {
-      return SizedBox(
+      return const SizedBox(
         height: 19,
       );
     }
     else{
       return const SizedBox(height: 0,);
     }
+  }
+
+  void hideLoaderDialog(BuildContext context) {
+    Navigator.pop(context);
+  }
+
+  Widget buildListView() {
+     return BlocBuilder<CommentCubit, CommentState>(
+      // build only condition is true (states)
+      buildWhen: (previous, current) =>
+      current is CommentGetSuccessState || current is CommentAddSuccessState,
+      builder: (context, state) {
+    return BuildCondition(
+      condition: commentsCubit.comments.isNotEmpty,
+      builder:(context) => ListView.builder(
+        physics: const BouncingScrollPhysics(),
+        itemCount: commentsCubit.comments.length,
+        itemBuilder: (context, index) {
+          var data = commentsCubit.comments[index];
+          return Padding(
+            padding: const EdgeInsets.all(15),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  backgroundImage: NetworkImage(
+                      data.userImageUrl!),
+                  radius: 18,
+                ),
+                const SizedBox(
+                  width: 10,
+                ),
+                Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                            text: TextSpan(children: [
+                              TextSpan(
+                                  text: data.username!.toString(),
+                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                              TextSpan(
+                                  text:'   ${data.comment}'
+                                  )
+                            ])),
+                        space5Vertical,
+                        Text(
+                          data.commentTime!.split(' ')[0],
+                          style:
+                          const TextStyle(fontSize: 15, color: Colors.grey),
+                        ),
+                      ],
+                      mainAxisAlignment: MainAxisAlignment.center,
+                    ))
+              ],
+            ),
+          );
+        },
+      ),
+      fallback: (_) => const LoadingPage(),
+    );
+  },
+);
   }
 }
