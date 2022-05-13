@@ -8,33 +8,41 @@ import 'package:instagram_firebase/core/constants.dart';
 import 'package:instagram_firebase/core/models/posts.dart';
 import 'package:instagram_firebase/core/models/stories.dart';
 import 'package:instagram_firebase/core/widget/loading.dart';
-import 'package:instagram_firebase/features/add_post/cubit/add_post_cubit.dart';
 import 'package:instagram_firebase/features/add_post/page/add_post.dart';
 import 'package:instagram_firebase/features/comment/page/comments.dart';
 import 'package:instagram_firebase/features/home/cubit/home_bloc_cubit.dart';
 import 'package:instagram_firebase/features/login/page/login.dart';
 import 'package:instagram_firebase/features/stories/page/stories.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
-  late BuildContext context;
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   late HomeBlocCubit cubit;
-  HomeBlocState? _state;
+
+  @override
+  void initState() {
+    super.initState();
+    cubit = context.read<HomeBlocCubit>();
+    cubit.getPosts();
+  }
 
   @override
   Widget build(BuildContext context) {
-    this.context = context;
+    // this.context = context;
     cubit = context.read<HomeBlocCubit>();
-    // get posts
-    cubit.getPosts();
+    cubit.getHomeStories();
     var size = MediaQuery.of(context).size;
     return BlocListener<HomeBlocCubit, HomeBlocState>(
       listener: (context, state) {
-        _state = state;
         if (state is GetStoriesDetailsSuccessState) {
           onShowStoryTapped(state.storiesModel);
         } else if (state is AddStorySuccessState) {
-          showSnackBar("Story added",context);
+          showSnackBar("Story added", context);
         }
       },
       child: Scaffold(
@@ -76,17 +84,22 @@ class HomePage extends StatelessWidget {
 
   Widget postsListView(Size size) {
     return BlocBuilder<HomeBlocCubit, HomeBlocState>(
-      buildWhen: (previous, current) => current is HomeSuccessPostStates,
-      builder: (context, state) {
-        return ListView.separated(
-            shrinkWrap: true,
-            physics: const ScrollPhysics(),
-            itemBuilder: (context, index) =>
-                buildPostItem(size, cubit.posts[index]),
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
-            itemCount: cubit.posts.length);
-      },
-    );
+        builder: (context, state) {
+          return BuildCondition(
+            condition: cubit.posts.isNotEmpty,
+            builder:(context) => ListView.separated(
+                shrinkWrap: true,
+                physics: const ScrollPhysics(),
+                itemBuilder: (context, index) =>
+                    buildPostItem(size, cubit.posts[index]),
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                itemCount: cubit.posts.length),
+            fallback:(_)=> const LoadingPage(),
+          );
+
+        },
+      );
+
   }
 
   buildStories() {
@@ -138,7 +151,7 @@ class HomePage extends StatelessWidget {
               height: 110,
               child: BlocBuilder<HomeBlocCubit, HomeBlocState>(
                 buildWhen: (previous, current) =>
-                current is GetHomeStoriesSuccessState,
+                    current is GetHomeStoriesSuccessState,
                 builder: (context, state) {
                   return ListView.separated(
                     separatorBuilder: (context, index) => const SizedBox(
@@ -179,8 +192,7 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               CircleAvatar(
-                backgroundImage: NetworkImage(
-                    story.userImageUrl!),
+                backgroundImage: NetworkImage(story.userImageUrl!),
                 radius: 33,
               ),
             ],
@@ -188,9 +200,9 @@ class HomePage extends StatelessWidget {
           const SizedBox(
             height: 5,
           ),
-           Text(
+          Text(
             story.username!,
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
           )
         ],
       ),
@@ -331,11 +343,11 @@ class HomePage extends StatelessWidget {
               current is UnLikePostSuccessState,
           builder: (context, state) {
             return Padding(
-              padding: EdgeInsets.symmetric(horizontal: 23.0),
+              padding: const EdgeInsets.symmetric(horizontal: 23.0),
               child: Text(
                 "${post.likeCount} Likes",
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold),
               ),
             );
           },

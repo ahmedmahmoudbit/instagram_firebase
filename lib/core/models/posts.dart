@@ -36,8 +36,6 @@ class Post {
       username = CacheHelper.getData(key: 'username');
       userImageUrl = CacheHelper.getData(key: 'image');
     }
-
-
   }
 
   Post.fromJson(Map<String, dynamic> json)

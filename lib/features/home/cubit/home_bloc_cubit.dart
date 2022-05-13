@@ -32,7 +32,7 @@ class HomeBlocCubit extends Cubit<HomeBlocState> {
         .then((QuerySnapshot querySnapshot) async {
 
       // empty data after every get post
-      posts = [];
+      posts.clear();
 
       // loop for all user and get all data (user user)
       for (var doc in querySnapshot.docs) {
@@ -60,12 +60,12 @@ class HomeBlocCubit extends Cubit<HomeBlocState> {
             post.isLiked = false;
           }
         }
-
         // add data .
         posts.add(post);
+
       }
+      print('lenghth ------------------------ ${posts.length}');
         // sort data A - Z
-       // posts.reversed;
       emit(HomeSuccessPostStates());
     });
   }
@@ -197,6 +197,7 @@ class HomeBlocCubit extends Cubit<HomeBlocState> {
         if (isLessThanDay) {
           homeStories.add(story);
         }
+
       }
       emit(GetHomeStoriesSuccessState());
     });
