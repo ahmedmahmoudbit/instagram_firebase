@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:instagram_firebase/core/models/stories.dart';
 import 'package:story_view/controller/story_controller.dart';
 import 'package:story_view/utils.dart';
 import 'package:story_view/widgets/story_view.dart';
 
 class StoryPage extends StatelessWidget {
-  StoryPage({Key? key}) : super(key: key);
+  StoryPage({Key? key,required this.storiesDetails}) : super(key: key);
 
   final controller = StoryController();
+  List<StoriesModel> storiesDetails;
 
   @override
   Widget build(context) {
-    List<StoryItem> storyItems = [
-      StoryItem.pageImage(url: 'https://wirepicker.com/wp-content/uploads/2021/09/android-vs-ios_1200x675.jpg', controller: controller),
-      StoryItem.pageImage(url: 'https://www.neappoli.com/static/media/flutterImg.94b8139a.png', controller: controller),
-      StoryItem.pageImage(url: 'https://wirepicker.com/wp-content/uploads/2021/09/android-vs-ios_1200x675.jpg', controller: controller),
-      StoryItem.pageImage(url: 'https://www.neappoli.com/static/media/flutterImg.94b8139a.png', controller: controller),
-      StoryItem.pageImage(url: 'https://wirepicker.com/wp-content/uploads/2021/09/android-vs-ios_1200x675.jpg', controller: controller),
-      StoryItem.pageImage(url: 'https://www.neappoli.com/static/media/flutterImg.94b8139a.png', controller: controller),
-    ]; // your list of stories
+
+    // loop all stories and get .
+    List<StoryItem> stories = [];
+    for (var element in storiesDetails) {
+      stories.add(StoryItem.pageImage(
+          url: element.storyImageUrl!, controller: controller));
+    } // your list of stories
 
     return StoryView(
       controller: controller,
@@ -35,7 +36,8 @@ class StoryPage extends StatelessWidget {
           Navigator.pop(context);
         }
       },
-      storyItems: storyItems,
+      // items.
+      storyItems: stories,
     );
   }
 }

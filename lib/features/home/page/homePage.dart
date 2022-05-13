@@ -6,6 +6,7 @@ import 'package:flutter_font_icons/flutter_font_icons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:instagram_firebase/core/constants.dart';
 import 'package:instagram_firebase/core/models/posts.dart';
+import 'package:instagram_firebase/core/models/stories.dart';
 import 'package:instagram_firebase/core/widget/loading.dart';
 import 'package:instagram_firebase/features/add_post/cubit/add_post_cubit.dart';
 import 'package:instagram_firebase/features/add_post/page/add_post.dart';
@@ -30,6 +31,11 @@ class HomePage extends StatelessWidget {
     return BlocListener<HomeBlocCubit, HomeBlocState>(
       listener: (context, state) {
         _state = state;
+        if (state is GetStoriesDetailsSuccessState) {
+          onShowStoryTapped(state.storiesModel);
+        } else if (state is AddStorySuccessState) {
+          showSnackBar("Story added",context);
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -56,38 +62,32 @@ class HomePage extends StatelessWidget {
         ],
       );
 
-  Widget screenBody(Size size) =>
-      BlocBuilder<HomeBlocCubit, HomeBlocState>(buildWhen: (previous, current) {
-        return current is HomeSuccessPostStates;
-      }, builder: (context, state) {
-        return BuildCondition(
-          condition: _state is HomeSuccessPostStates,
-          builder: (_) => BlocBuilder<HomeBlocCubit, HomeBlocState>(
-            buildWhen: (previous, current) => current is HomeSuccessPostStates,
-            builder: (context, state) {
-              return ListView(
-                children: [
-                  buildStories(),
-                  const Divider(
-                    color: Colors.white,
-                    height: 0.1,
-                    thickness: 0.4,
-                  ),
-                  ListView.separated(
-                      shrinkWrap: true,
-                      physics: const ScrollPhysics(),
-                      itemBuilder: (context, index) =>
-                          buildPostItem(size, cubit.posts[index]),
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
-                      itemCount: cubit.posts.length)
-                ],
-              );
-            },
+  Widget screenBody(Size size) => ListView(
+        children: [
+          buildStories(),
+          const Divider(
+            color: Colors.white,
+            height: 0.1,
+            thickness: 0.4,
           ),
-          fallback: (_) => const LoadingPage(),
-        );
-      });
+          postsListView(size),
+        ],
+      );
+
+  Widget postsListView(Size size) {
+    return BlocBuilder<HomeBlocCubit, HomeBlocState>(
+      buildWhen: (previous, current) => current is HomeSuccessPostStates,
+      builder: (context, state) {
+        return ListView.separated(
+            shrinkWrap: true,
+            physics: const ScrollPhysics(),
+            itemBuilder: (context, index) =>
+                buildPostItem(size, cubit.posts[index]),
+            separatorBuilder: (context, index) => const SizedBox(height: 8),
+            itemCount: cubit.posts.length);
+      },
+    );
+  }
 
   buildStories() {
     return Padding(
@@ -136,13 +136,19 @@ class HomePage extends StatelessWidget {
           Expanded(
             child: SizedBox(
               height: 110,
-              child: ListView.separated(
-                separatorBuilder: (context, index) => const SizedBox(
-                  width: 10,
-                ),
-                itemBuilder: (context, index) => buildStoryItem(),
-                itemCount: 20,
-                scrollDirection: Axis.horizontal,
+              child: BlocBuilder<HomeBlocCubit, HomeBlocState>(
+                buildWhen: (previous, current) =>
+                current is GetHomeStoriesSuccessState,
+                builder: (context, state) {
+                  return ListView.separated(
+                    separatorBuilder: (context, index) => const SizedBox(
+                      width: 10,
+                    ),
+                    itemBuilder: (context, index) => buildStoryItem(index),
+                    itemCount: cubit.homeStories.length,
+                    scrollDirection: Axis.horizontal,
+                  );
+                },
               ),
             ),
           )
@@ -151,9 +157,10 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  buildStoryItem() {
+  buildStoryItem(int index) {
+    StoriesModel story = cubit.homeStories[index];
     return InkWell(
-      onTap: () => onShowStoryTapped(),
+      onTap: () => cubit.getStoriesDetails(story.userId!),
       child: Column(
         children: [
           Stack(
@@ -171,9 +178,9 @@ class HomePage extends StatelessWidget {
                       ])),
                 ),
               ),
-              const CircleAvatar(
+              CircleAvatar(
                 backgroundImage: NetworkImage(
-                    "https://wirepicker.com/wp-content/uploads/2021/09/android-vs-ios_1200x675.jpg"),
+                    story.userImageUrl!),
                 radius: 33,
               ),
             ],
@@ -181,8 +188,8 @@ class HomePage extends StatelessWidget {
           const SizedBox(
             height: 5,
           ),
-          const Text(
-            "Amir",
+           Text(
+            story.username!,
             style: TextStyle(color: Colors.white),
           )
         ],
@@ -351,12 +358,14 @@ class HomePage extends StatelessWidget {
 
   onAddStoryTapped() async {
     final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final List<XFile>? images = await _picker.pickMultiImage();
+    List<File> paths = images!.map((xFile) => File(xFile.path)).toList();
+    cubit.addStories(paths);
   }
 
-  onShowStoryTapped() {
+  onShowStoryTapped(List<StoriesModel> storiesDetails) {
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => StoryPage(),
+      builder: (context) => StoryPage(storiesDetails: storiesDetails),
     ));
   }
 
