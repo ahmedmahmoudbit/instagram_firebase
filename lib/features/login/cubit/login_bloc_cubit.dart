@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:instagram_firebase/core/auth.dart';
 import 'package:instagram_firebase/core/constants.dart';
 import 'package:instagram_firebase/core/models/user_data.dart';
 import 'package:instagram_firebase/core/network/local/cache_helper.dart';
@@ -51,5 +52,12 @@ class LoginBloc extends Cubit<LoginBlocState> {
     CacheHelper.saveData(
         key: 'uId', value: userModel.uId);
   }
+
+  // --------------------- finger Print
+
+  String isSwitch = CacheHelper.getData(key: 'finger') ? 'yes' : '';
+
+
+
 
 }

@@ -9,13 +9,15 @@ import 'package:instagram_firebase/core/models/posts.dart';
 import 'package:instagram_firebase/core/models/stories.dart';
 import 'package:instagram_firebase/core/widget/loading.dart';
 import 'package:instagram_firebase/features/add_post/page/add_post.dart';
+import 'package:instagram_firebase/features/chatting/all_user_screen/getAllUser.dart';
 import 'package:instagram_firebase/features/comment/page/comments.dart';
 import 'package:instagram_firebase/features/home/cubit/home_bloc_cubit.dart';
 import 'package:instagram_firebase/features/login/page/login.dart';
+import 'package:instagram_firebase/features/setting/setting.dart';
 import 'package:instagram_firebase/features/stories/page/stories.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage({Key? key}) : super(key: key);
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -65,8 +67,15 @@ class _HomePageState extends State<HomePage> {
                 onAddBoxTapped(context);
               },
               icon: const Icon(Icons.add_box_outlined)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.favorite_border)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.chat_outlined)),
+          IconButton(onPressed: () {
+
+          }, icon: const Icon(Icons.favorite_border)),
+          IconButton(onPressed: () {
+            navigateTo(context, const AllUserChattingPage());
+          }, icon: const Icon(Icons.chat_outlined)),
+          IconButton(onPressed: () {
+              navigateTo(context, const SettingPage());
+          }, icon: const Icon(Icons.settings)),
         ],
       );
 

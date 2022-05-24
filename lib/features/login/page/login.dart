@@ -1,8 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:instagram_firebase/core/auth.dart';
 import 'package:instagram_firebase/core/constants.dart';
+import 'package:instagram_firebase/core/network/local/cache_helper.dart';
 import 'package:instagram_firebase/features/home/page/homePage.dart';
 import 'package:instagram_firebase/features/login/cubit/login_bloc_cubit.dart';
 import 'package:instagram_firebase/features/register/page/register.dart';
@@ -24,16 +24,22 @@ class _LoginPageState extends State<LoginPage> {
   LoginBloc cubit = LoginBloc();
   int? _state;
 
+  // finger
+  late bool isFinger;
+  final FingerPrint _fingerPrint = FingerPrint();
+
   @override
   void initState() {
     super.initState();
     cubit = context.read<LoginBloc>();
+    isFinger = CacheHelper.getData(key: 'finger') ?? false;
+    print('------------------------------ $isFinger');
   }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<LoginBloc, LoginBlocState>(
       listener: (context, state) {
-        print('8888888888888 ${_state.toString()}');
       if (state is HomeGetUserSuccessState) {
         _state = 1;
         navigateAndFinish(context, HomePage());
@@ -86,7 +92,17 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text('Please enter your email and password',
                           style: TextStyle(color: Colors.red[100]),),
                       )),
-
+                if (!isFinger)
+                  InkWell(
+                    onTap: (){
+                      fingerLogin();
+                    },
+                    child: Container(
+                      height: 130,
+                      width: 100,
+                      child: Icon(Icons.fingerprint_rounded,color: Colors.white,size: 64),
+                    ),
+                  ),
                 TextButton(
                     onPressed: () {
                       navigateAndFinish(context, const RegisterPage());
@@ -108,4 +124,19 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {});
     }
   }
+
+
+  void fingerLogin() async {
+    bool isFinished = await _fingerPrint.isFingerPrintEnable();
+    if (isFinished) {
+      bool isAuth = await _fingerPrint.isAuth('login finger print');
+      if (isAuth) {
+        String mail = CacheHelper.getData(key: 'email');
+        String pass = CacheHelper.getData(key: 'password');
+        cubit.userLogin(email: mail, password: pass);
+      }
+    }
+  }
+
 }
+
